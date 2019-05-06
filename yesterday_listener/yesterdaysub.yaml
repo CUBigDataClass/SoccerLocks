@@ -1,0 +1,14 @@
+runtime: python
+runtime_config:
+  python_version: 3
+env: flex
+service: yesterdaysub
+
+entrypoint: python sub.py sports-234417 yesterday-games-sub
+
+manual_scaling:
+  instances: 2
+resources:
+  cpu: 1
+  memory_gb: 1
+  disk_size_gb: 10
