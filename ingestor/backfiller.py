@@ -10,11 +10,10 @@ import config
 import sys 
 
 
-#base url for service: https://apicall-dot-sports-234417.appspot.com
-
+#publish matches for date specified by offset
 def backfill_update(offset,match_counter):
     project_id = "sports-234417"
-    topic_name = "today-games" #TODO: create new topic for yesterdays games
+    topic_name = "today-games" 
     yesterday_date = (datetime.today() - timedelta(offset)).date()
     matches = get_matches(yesterday_date)
 
@@ -28,7 +27,7 @@ def backfill_update(offset,match_counter):
     return match_counter
 
 
-#param date: python datetime object
+#get matches for a  certain date
 def get_matches(date):
     matches = []
     endpoint = "https://apifootball.com/api/"
@@ -87,6 +86,8 @@ def pub(project_id, topic_name,match):
     while api_future.running():
         time.sleep(0.1)
 
+#loop backwards through season and add matches to topics to be processed by subscribers
+#manually change range to update different parts of the season
 def backfill():
     match_counter = 0
     backfill_update(5,match_counter)

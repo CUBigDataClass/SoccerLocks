@@ -1,5 +1,3 @@
-#!/usr/bin/env python
-
 # Copyright 2019 Google LLC
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -14,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+#Modified from the Google Cloud pubsub example for python
 import argparse
 import time
 import json
@@ -21,12 +20,14 @@ import requests
 import processor
 from google.cloud import pubsub_v1
 
+#listens to topic for any new messages
 def sub(project_id, subscription_name):
     """Receives messages from a Pub/Sub subscription."""
     client = pubsub_v1.SubscriberClient()
     subscription_path = client.subscription_path(
         project_id, subscription_name)
-
+        
+    #process message and acknowledge
     def callback(message):
         print("Processing message: {0}".format(message))
         result = processor.process_message(message)

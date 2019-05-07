@@ -2,9 +2,9 @@ runtime: python
 runtime_config:
   python_version: 3
 env: flex
-service: apicall
-#service: python
-entrypoint: gunicorn -b :$PORT apicall:app
+service: ingestor
+
+entrypoint: gunicorn -b :$PORT ingestor:app
 
 manual_scaling:
   instances: 1

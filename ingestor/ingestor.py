@@ -12,17 +12,20 @@ app = Flask(__name__)
 
 #base url for service: https://apicall-dot-sports-234417.appspot.com
 
+#test 
 @app.route('/')
 def hello():
     dictionary = {'message': 'Different message for service'}
     return jsonify(dictionary)
 
-
+#todays games update endpoint run daily through cron job
 @app.route('/ingestor/today-games/update/',methods = ['GET'])
 def today_update():
     project_id = "sports-234417"
     topic_name = "today-games"
-    current_date = datetime.today().date() #Remove timedelta for prod version
+
+    #get all matches for today and publish to today-games topic
+    current_date = datetime.today().date() 
     matches = get_matches(current_date)
     if matches: 
         for match in matches: 
@@ -33,13 +36,15 @@ def today_update():
 
     return jsonify(matches)
 
+#yesterdays games update endpoint run daily though cron job
 @app.route('/ingestor/yesterday-games/update/',methods = ['GET'])
 def yesterday_update():
     project_id = "sports-234417"
     topic_name = "yesterday-games" 
+
+    #get all matches for yesterday and publish to yesterday-games topic
     yesterday_date = (datetime.today() - timedelta(1)).date()
     matches = get_matches(yesterday_date)
-
     if matches: 
         for match in matches: 
             pub(project_id,topic_name,match)
@@ -49,18 +54,17 @@ def yesterday_update():
     return jsonify(matches)
 
 
-#param date: python datetime object
+#get all matches for a specified date in supported leagues
 def get_matches(date):
     matches = []
     endpoint = "https://apifootball.com/api/"
     key = config.key
-    #from_date = "2019-04-21"
-    #to_date = "2019-04-21"
     from_date = datetime.strftime(date,'%Y-%m-%d')
     to_date = from_date
-
     params = {"APIkey" : key, "action" : "get_events", "to": to_date, "from": from_date}
     response = requests.get(endpoint, params = params)
+
+    #add all matches in supported leagues to list if api response successful
     leagues = ["62","117","109"] #premier league, bundesliga, la liga
     if "error" not in response.json():
         for match in response.json():

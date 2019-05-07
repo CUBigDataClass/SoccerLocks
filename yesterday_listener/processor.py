@@ -4,6 +4,7 @@ import pymongo
 import dns
 import config
 
+#process a match message for a match occuring yesterday
 def process_message(message):
     try:
         data  = message.data.decode('utf-8')
@@ -12,6 +13,7 @@ def process_message(message):
         print("Failed to parse data for message: {0}".format(message))
         return
 
+    #parse out all match stats from message and assign to match dict
     match_agg = {}
     match_agg["home_team"] = match["match_hometeam_name"]
     match_agg["away_team"] = match["match_awayteam_name"]
@@ -43,8 +45,8 @@ def process_message(message):
         elif stat["type"] == "goal kicks":
             match_agg["home_goal_kicks"] = toint(stat.get("home"))
             match_agg["away_goal_kicks"] = toint(stat.get("away"))
-    #ignore matches that don't have stats 
     match_agg["full_match_stats"] = True
+    #if stats missing from api response set to null
     if not match["statistics"]:
         match_agg["full_match_stats"] = False
         match_agg = null_stats(match_agg)
@@ -58,6 +60,7 @@ def process_message(message):
     params = {"APIkey" : key, "action" : "get_odds", "to": to_date, "from": from_date,"match_id": match_id}
     odds_response = requests.get(endpoint, params = params) 
 
+    #set odds in match dict if response is succesful
     if not "error" in odds_response.json():
         odds = odds_response.json()[0]
         match_agg["home_odds"] = tofloat(odds.get("odd_1"))
@@ -71,13 +74,14 @@ def process_message(message):
 
     print(match_agg) #easy logging, this will appear in StackDriver
 
+    #update existing match document in mongo
     client = pymongo.MongoClient(config.connection_string)
     collection = client.matchdb.matchmaster
     filter = {'match_date': match_agg["match_date"],'home_team':match_agg['home_team'],'away_team':match_agg['away_team']}
     update_data = {'$set': match_agg}
     collection.find_one_and_update(filter,update_data,upsert=True)
 
-    return 0 #TODO: change to meaningful response code so sub.py only acks good messages
+    return 0 
 
 #Custom int conversion to handle empty stats from API
 def toint(num):
@@ -87,6 +91,7 @@ def toint(num):
         intnum = None
     return intnum
 
+#Custom float conversion to handle empty stats from API
 def tofloat(num):
     try:
         floatnum = float(num)
@@ -94,6 +99,7 @@ def tofloat(num):
         floatnum = Nones
     return floatnum
 
+#init all stats as null (used when stats are missing from api)
 def null_stats(match_agg):
     match_agg["home_shots_on_target"] = None
     match_agg["away_shots_on_target"] = None
